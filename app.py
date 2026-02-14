@@ -13,11 +13,11 @@ PALETTE = {
     "Terracotta": "#B38F5F"
 }
 
-# High Contrast Settings for Text
+# High Contrast Settings for Text (Dark Mode)
 TEXT_PALETTE = {
-    "Self": "#A04030",      # Darker Rust
-    "Co-author": "#2F4F5F", # Darker Slate
-    "Other": "#404040"      # Dark Grey (Sage is too light for text)
+    "Self": "#FF8C69",      # Light Terracotta
+    "Co-author": "#8FD3E8", # Light Blue
+    "Other": "#E0E0E0"      # Off-White
 }
 
 # --- Constants & Config ---
@@ -31,38 +31,32 @@ def apply_theme():
     <style>
     /* Mobile Visibility Boost */
     html {{
-        font-size: 18px; /* Larger base font for mobile */
+        font-size: 18px; 
     }}
     
     /* Sharp Headers */
     h1, h2, h3 {{
         font-family: 'Segoe UI', sans-serif;
-        color: {PALETTE['DeepBlue']};
+        color: {PALETTE['Sand']}; /* Sand Text for Dark Mode */
         border-bottom: 2px solid {PALETTE['Terracotta']};
         padding-bottom: 10px;
         margin-bottom: 20px;
     }}
     
-    /* Global Background Accent */
-    .stApp {{
-        background-color: #FAFAFA;
-    }}
-    
-    /* Button Styling - Full Width for Mobile */
+    /* Button Styling */
     div.stButton > button {{
-        background-color: {PALETTE['DeepBlue']};
-        color: white;
+        background-color: {PALETTE['Terracotta']}; /* Terracotta Action Button */
+        color: {PALETTE['DeepBlue']};
         border: none;
-        border-radius: 4px; /* Slight radius for friendliness */
+        border-radius: 4px; 
         padding: 14px 24px;
-        font-size: 18px;    /* Larger Text */
+        font-size: 18px;    
         font-weight: bold;
-        width: 100%;        /* Mobile Friendly Target */
+        width: 100%;        
     }}
     div.stButton > button:hover {{
-        background-color: {PALETTE['BlueGrey']};
-        color: white;
-        border: 2px solid {PALETTE['DeepBlue']};
+        background-color: {PALETTE['Sand']};
+        color: {PALETTE['DeepBlue']};
     }}
     
     /* Metrics */
@@ -72,7 +66,7 @@ def apply_theme():
     }}
     div[data-testid="stMetricLabel"] {{
         font-size: 1rem;
-        color: {PALETTE['DeepBlue']};
+        color: {PALETTE['Sand']};
     }}
     
     /* Tabs Styling */
@@ -80,20 +74,21 @@ def apply_theme():
         gap: 4px;
     }}
     .stTabs [data-baseweb="tab"] {{
-        height: 60px; /* Taller touch target */
+        height: 60px; 
         white-space: pre-wrap;
-        background-color: {PALETTE['Sand']};
+        background-color: {PALETTE['DeepBlue']}; /* Darker Tab Background */
         border-radius: 4px 4px 0 0;
-        color: {PALETTE['DeepBlue']};
+        color: {PALETTE['Sand']};
         font-weight: bold;
         font-size: 16px;
     }}
     .stTabs [aria-selected="true"] {{
-        background-color: {PALETTE['DeepBlue']};
-        color: white;
+        background-color: {PALETTE['Terracotta']};
+        color: {PALETTE['DeepBlue']};
     }}
     </style>
     """, unsafe_allow_html=True)
+
 
 # ==========================================
 # 1. OPENALEX FUNCTIONS
@@ -370,12 +365,14 @@ def display_results(container, source_name, target_author, df_top, num_analyzed,
                     height=chart_height,
                     orientation='h'
                 )
+                # Update layout for sharp look and readability
                 fig.update_layout(
+                    template="plotly_dark",
                     font_family="Segoe UI",
                     title_font_family="Segoe UI",
-                    plot_bgcolor="#FFFFFF",
-                    paper_bgcolor="#FFFFFF",
-                    xaxis={'showgrid': True, 'gridcolor': '#EFEFEF', 'fixedrange': True}, 
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    xaxis={'showgrid': True, 'gridcolor': '#444', 'fixedrange': True}, 
                     yaxis={'categoryorder':'total ascending', 'fixedrange': True}, 
                     showlegend=True,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
