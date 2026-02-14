@@ -338,11 +338,18 @@ def display_results(container, source_name, target_author, df_top, num_analyzed,
             self_cites = df_top[df_top["Category"] == "Self-Citation"]["Citations"].sum()
             co_cites = df_top[df_top["Category"] == "Co-author"]["Citations"].sum()
             
-            # Metrics
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Analyzed Works", num_analyzed)
-            c2.metric("Total Citations", total)
-            c3.metric("Citation Density", f"{(total/num_analyzed):.1f}" if num_analyzed else "0")
+            self_pct = (self_cites / total * 100) if total else 0
+            collab_pct = (co_cites / total * 100) if total else 0
+            
+            # Metrics Row 1
+            m1, m2 = st.columns(2)
+            m1.metric("Total Citations", total)
+            m2.metric("Analyzed Works", num_analyzed)
+            
+            # Metrics Row 2
+            m3, m4 = st.columns(2)
+            m3.metric("Self-Citation Rate", f"{self_pct:.1f}%")
+            m4.metric("Co-Author Rate", f"{collab_pct:.1f}%")
             
             tab_chart, tab_table = st.tabs(["📊 Chart", "📄 Data"])
             
