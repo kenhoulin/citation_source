@@ -13,6 +13,13 @@ PALETTE = {
     "Terracotta": "#B38F5F"
 }
 
+# High Contrast Settings for Text
+TEXT_PALETTE = {
+    "Self": "#A04030",      # Darker Rust
+    "Co-author": "#2F4F5F", # Darker Slate
+    "Other": "#404040"      # Dark Grey (Sage is too light for text)
+}
+
 # --- Constants & Config ---
 HEADERS = {
     "User-Agent": "mailto:test@example.com"
@@ -22,6 +29,11 @@ HEADERS = {
 def apply_theme():
     st.markdown(f"""
     <style>
+    /* Mobile Visibility Boost */
+    html {{
+        font-size: 18px; /* Larger base font for mobile */
+    }}
+    
     /* Sharp Headers */
     h1, h2, h3 {{
         font-family: 'Segoe UI', sans-serif;
@@ -41,10 +53,11 @@ def apply_theme():
         background-color: {PALETTE['DeepBlue']};
         color: white;
         border: none;
-        border-radius: 0px; /* SHARP edges */
-        padding: 12px 24px;
+        border-radius: 4px; /* Slight radius for friendliness */
+        padding: 14px 24px;
+        font-size: 18px;    /* Larger Text */
         font-weight: bold;
-        width: 100%; /* Mobile Friendly Target */
+        width: 100%;        /* Mobile Friendly Target */
     }}
     div.stButton > button:hover {{
         background-color: {PALETTE['BlueGrey']};
@@ -55,19 +68,25 @@ def apply_theme():
     /* Metrics */
     div[data-testid="stMetricValue"] {{
         color: {PALETTE['Terracotta']};
+        font-size: 2rem;
+    }}
+    div[data-testid="stMetricLabel"] {{
+        font-size: 1rem;
+        color: {PALETTE['DeepBlue']};
     }}
     
     /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 2px;
+        gap: 4px;
     }}
     .stTabs [data-baseweb="tab"] {{
-        height: 50px;
+        height: 60px; /* Taller touch target */
         white-space: pre-wrap;
         background-color: {PALETTE['Sand']};
-        border-radius: 0px;
+        border-radius: 4px 4px 0 0;
         color: {PALETTE['DeepBlue']};
         font-weight: bold;
+        font-size: 16px;
     }}
     .stTabs [aria-selected="true"] {{
         background-color: {PALETTE['DeepBlue']};
@@ -301,9 +320,9 @@ def s2_process_data(papers, target_author_id, exclude_self=False):
 # ==========================================
 
 def get_author_color(category):
-    if category == "Self-Citation": return PALETTE['Terracotta']
-    elif category == "Co-author": return PALETTE['BlueGrey']
-    else: return PALETTE['Sage']
+    if category == "Self-Citation": return TEXT_PALETTE['Self']
+    elif category == "Co-author": return TEXT_PALETTE['Co-author']
+    else: return TEXT_PALETTE['Other']
 
 def style_dataframe(df):
     def color_name(row):
