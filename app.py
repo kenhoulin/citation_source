@@ -319,54 +319,63 @@ def display_results(source_name, target_author, df_top, num_analyzed, exclude_se
         self_pct = (self_cites / total * 100) if total else 0
         collab_pct = (co_cites / total * 100) if total else 0
         
+        # Metrics
         c1, c2, c3 = st.columns(3)
         c1.metric("Analyzed Works", num_analyzed)
         c2.metric("Total Citations", total)
         c3.metric("Citation Density", f"{(total/num_analyzed):.1f}" if num_analyzed else "0")
         
-        # Chart with Big Bend Colors
-        fig = px.bar(
-            df_top, 
-            x="Author Name", 
-            y="Citations", 
-            color='Category',
-            color_discrete_map={
-                "Self-Citation": PALETTE['Terracotta'],
-                "Co-author": PALETTE['BlueGrey'],
-                "Other": PALETTE['Sage'], # or DeepBlue?
-                "(?)": "#D3D3D3"
-            },
-            title="Citation Distribution by Relationship",
-            height=400
-        )
-        # Update layout for sharp look
-        fig.update_layout(
-            font_family="Segoe UI",
-            title_font_family="Segoe UI",
-            plot_bgcolor="#FFFFFF",
-            paper_bgcolor="#FFFFFF",
-            xaxis={'categoryorder':'total descending', 'showgrid': False},
-            yaxis={'showgrid': True, 'gridcolor': '#EFEFEF'},
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        tab_chart, tab_table = st.tabs(["📊 Chart", "📄 Data"])
         
-        st.caption("Top 50 Citing Authors")
-        column_config = {
-            "Author Name": st.column_config.TextColumn("Author Name"),
-            "Profile URL": st.column_config.LinkColumn("Profile", display_text="🔗 View"),
-            "Citations": st.column_config.NumberColumn("Citations", format="%d"),
-            "Category": st.column_config.TextColumn("Rel.")
-        }
-        styled_df = style_dataframe(df_top)
-        st.dataframe(
-            styled_df,
-            column_config=column_config,
-            column_order=["Author Name", "Citations", "Category", "Profile URL"],
-            use_container_width=True,
-            hide_index=True
-        )
+        with tab_chart:
+            # Chart with Big Bend Colors - Horizontal Layout (Bars arranged vertically)
+            # Dynamic height to make sure bars are "wide" enough
+            chart_height = max(500, len(df_top) * 30)
+            
+            fig = px.bar(
+                df_top, 
+                y="Author Name", 
+                x="Citations", 
+                color='Category',
+                color_discrete_map={
+                    "Self-Citation": PALETTE['Terracotta'],
+                    "Co-author": PALETTE['BlueGrey'],
+                    "Other": PALETTE['Sage'],
+                    "(?)": "#D3D3D3"
+                },
+                title="Citation Distribution by Relationship",
+                height=chart_height,
+                orientation='h' # Horizontal bars
+            )
+            # Update layout for sharp look and readability
+            fig.update_layout(
+                font_family="Segoe UI",
+                title_font_family="Segoe UI",
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                xaxis={'showgrid': True, 'gridcolor': '#EFEFEF', 'fixedrange': True}, # Disable zoom
+                yaxis={'categoryorder':'total ascending', 'fixedrange': True}, # Disable zoom, Top items at top
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}) # Hide toolbar
+            
+        with tab_table:
+            st.caption("Top 50 Citing Authors")
+            column_config = {
+                "Author Name": st.column_config.TextColumn("Author Name"),
+                "Profile URL": st.column_config.LinkColumn("Profile", display_text="🔗 View"),
+                "Citations": st.column_config.NumberColumn("Citations", format="%d"),
+                "Category": st.column_config.TextColumn("Rel.")
+            }
+            styled_df = style_dataframe(df_top)
+            st.dataframe(
+                styled_df,
+                column_config=column_config,
+                column_order=["Author Name", "Citations", "Category", "Profile URL"],
+                use_container_width=True,
+                hide_index=True
+            )
     else:
         st.warning("No data found.")
 
