@@ -36,19 +36,15 @@ def apply_theme():
         background-color: #FAFAFA;
     }}
     
-    /* Card-like Containers */
-    div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stMarkdownContainer"]) {{
-        /* Adding subtle distinction if needed, but keeping it clean */
-    }}
-    
-    /* Button Styling */
+    /* Button Styling - Full Width for Mobile */
     div.stButton > button {{
         background-color: {PALETTE['DeepBlue']};
         color: white;
         border: none;
         border-radius: 0px; /* SHARP edges */
-        padding: 10px 24px;
+        padding: 12px 24px;
         font-weight: bold;
+        width: 100%; /* Mobile Friendly Target */
     }}
     div.stButton > button:hover {{
         background-color: {PALETTE['BlueGrey']};
@@ -61,10 +57,21 @@ def apply_theme():
         color: {PALETTE['Terracotta']};
     }}
     
-    /* Info/Warning Boxes */
-    div[data-testid="stStatusWidget"] {{
-        border: 1px solid {PALETTE['BlueGrey']};
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 2px;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: {PALETTE['Sand']};
         border-radius: 0px;
+        color: {PALETTE['DeepBlue']};
+        font-weight: bold;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {PALETTE['DeepBlue']};
+        color: white;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -296,88 +303,85 @@ def s2_process_data(papers, target_author_id, exclude_self=False):
 def get_author_color(category):
     if category == "Self-Citation": return PALETTE['Terracotta']
     elif category == "Co-author": return PALETTE['BlueGrey']
-    else: return PALETTE['Sage'] # For Others (more distinct than Sage? Maybe DeepBlue? No, too similar to header)
-    # Using Sage for 'Others' is subtle. Let's try DeepBlue for 'Others' if Sage is too light?
-    # No, keep distinct.
+    else: return PALETTE['Sage']
 
 def style_dataframe(df):
     def color_name(row):
         color = get_author_color(row["Category"])
-        # If color is 'Sage' (#A8C6C3), it works on white.
         return [f'color: {color}; font-weight: bold' if col == 'Author Name' else '' for col in row.index]
     return df.style.apply(color_name, axis=1)
 
-def display_results(source_name, target_author, df_top, num_analyzed, exclude_self=False):
-    # Sharp visual separation
-    st.markdown(f"### {source_name}")
-    st.markdown("---") # Sharp divider
-    
-    if not df_top.empty:
-        total = df_top["Citations"].sum()
-        self_cites = df_top[df_top["Category"] == "Self-Citation"]["Citations"].sum()
-        co_cites = df_top[df_top["Category"] == "Co-author"]["Citations"].sum()
-        self_pct = (self_cites / total * 100) if total else 0
-        collab_pct = (co_cites / total * 100) if total else 0
+def display_results(container, source_name, target_author, df_top, num_analyzed, exclude_self=False):
+    """
+    Render results into a specific container (column or tab).
+    """
+    with container:
+        st.markdown(f"### {source_name}")
+        st.markdown("---") 
         
-        # Metrics
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Analyzed Works", num_analyzed)
-        c2.metric("Total Citations", total)
-        c3.metric("Citation Density", f"{(total/num_analyzed):.1f}" if num_analyzed else "0")
-        
-        tab_chart, tab_table = st.tabs(["📊 Chart", "📄 Data"])
-        
-        with tab_chart:
-            # Chart with Big Bend Colors - Horizontal Layout (Bars arranged vertically)
-            # Dynamic height to make sure bars are "wide" enough
-            chart_height = max(500, len(df_top) * 30)
+        if not df_top.empty:
+            total = df_top["Citations"].sum()
+            self_cites = df_top[df_top["Category"] == "Self-Citation"]["Citations"].sum()
+            co_cites = df_top[df_top["Category"] == "Co-author"]["Citations"].sum()
             
-            fig = px.bar(
-                df_top, 
-                y="Author Name", 
-                x="Citations", 
-                color='Category',
-                color_discrete_map={
-                    "Self-Citation": PALETTE['Terracotta'],
-                    "Co-author": PALETTE['BlueGrey'],
-                    "Other": PALETTE['Sage'],
-                    "(?)": "#D3D3D3"
-                },
-                title="Citation Distribution by Relationship",
-                height=chart_height,
-                orientation='h' # Horizontal bars
-            )
-            # Update layout for sharp look and readability
-            fig.update_layout(
-                font_family="Segoe UI",
-                title_font_family="Segoe UI",
-                plot_bgcolor="#FFFFFF",
-                paper_bgcolor="#FFFFFF",
-                xaxis={'showgrid': True, 'gridcolor': '#EFEFEF', 'fixedrange': True}, # Disable zoom
-                yaxis={'categoryorder':'total ascending', 'fixedrange': True}, # Disable zoom, Top items at top
-                showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-            )
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}) # Hide toolbar
+            # Metrics
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Analyzed Works", num_analyzed)
+            c2.metric("Total Citations", total)
+            c3.metric("Citation Density", f"{(total/num_analyzed):.1f}" if num_analyzed else "0")
             
-        with tab_table:
-            st.caption("Top 50 Citing Authors")
-            column_config = {
-                "Author Name": st.column_config.TextColumn("Author Name"),
-                "Profile URL": st.column_config.LinkColumn("Profile", display_text="🔗 View"),
-                "Citations": st.column_config.NumberColumn("Citations", format="%d"),
-                "Category": st.column_config.TextColumn("Rel.")
-            }
-            styled_df = style_dataframe(df_top)
-            st.dataframe(
-                styled_df,
-                column_config=column_config,
-                column_order=["Author Name", "Citations", "Category", "Profile URL"],
-                use_container_width=True,
-                hide_index=True
-            )
-    else:
-        st.warning("No data found.")
+            tab_chart, tab_table = st.tabs(["📊 Chart", "📄 Data"])
+            
+            with tab_chart:
+                # Dynamic height
+                chart_height = max(500, len(df_top) * 30)
+                
+                fig = px.bar(
+                    df_top, 
+                    y="Author Name", 
+                    x="Citations", 
+                    color='Category',
+                    color_discrete_map={
+                        "Self-Citation": PALETTE['Terracotta'],
+                        "Co-author": PALETTE['BlueGrey'],
+                        "Other": PALETTE['Sage'],
+                        "(?)": "#D3D3D3"
+                    },
+                    title="Citation Distribution",
+                    height=chart_height,
+                    orientation='h'
+                )
+                fig.update_layout(
+                    font_family="Segoe UI",
+                    title_font_family="Segoe UI",
+                    plot_bgcolor="#FFFFFF",
+                    paper_bgcolor="#FFFFFF",
+                    xaxis={'showgrid': True, 'gridcolor': '#EFEFEF', 'fixedrange': True}, 
+                    yaxis={'categoryorder':'total ascending', 'fixedrange': True}, 
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}) 
+                
+            with tab_table:
+                st.caption("Top 50 Citing Authors")
+                column_config = {
+                    "Author Name": st.column_config.TextColumn("Author Name"),
+                    "Profile URL": st.column_config.LinkColumn("Profile", display_text="🔗 View"),
+                    "Citations": st.column_config.NumberColumn("Citations", format="%d"),
+                    "Category": st.column_config.TextColumn("Rel.")
+                }
+                styled_df = style_dataframe(df_top)
+                st.dataframe(
+                    styled_df,
+                    column_config=column_config,
+                    column_order=["Author Name", "Citations", "Category", "Profile URL"],
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+        else:
+            st.warning("No data found.")
 
 # ==========================================
 # 4. MAIN APP
@@ -390,10 +394,13 @@ def main():
     st.title("🏜️ Citation Explorer")
     st.markdown(f"**OpenAlex** and **Semantic Scholar** working together to map research impact.")
 
+    # --- Sidebar ---
     with st.sidebar:
         st.header("Settings")
-        fetch_limit = st.slider("Analyze Top N Papers", 10, 200, 100, step=10)
+        view_mode = st.radio("View Mode", ["Tabs (Mobile Friendly)", "Split View (Desktop)"], index=0)
+        fetch_limit = st.slider("Analyze Top N Papers", 10, 200, 50, step=10) # Lower default for mobile
         exclude_self = st.checkbox("Exclude Self-Citations", value=False)
+        st.markdown("---")
         st.info("Uses **Big Bend** Palette: Deep Blue, Terracotta, Sage, Sand.")
     
     st.header("1. Identify Researcher")
@@ -420,11 +427,18 @@ def main():
 
     if oa_target and s2_target:
         st.divider()
-        if st.button("Generate Explorer View", type="primary"):
+        if st.button("Generate Explorer View", type="primary", use_container_width=True):
             
-            c_oa, c_s2 = st.columns(2)
+            # --- Layout Logic ---
+            if "Tabs" in view_mode:
+                container_oa, container_s2 = st.tabs(["OpenAlex Results", "Semantic Scholar Results"])
+            else:
+                container_oa, container_s2 = st.columns(2)
             
-            with c_oa:
+            # --- Execution ---
+            
+            # OpenAlex
+            with container_oa:
                 with st.status("Querying OpenAlex...", expanded=True) as status:
                     status.write(f"Analyzing top {fetch_limit} papers...")
                     try:
@@ -453,10 +467,14 @@ def main():
 
                         df_oa = oa_process_data(oa_citing, oa_target["id"], oa_collabs, exclude_self)
                         status.update(label="OpenAlex Ready", state="complete", expanded=False)
-                        display_results("OpenAlex", oa_target, df_oa, len(oa_works_analyzed), exclude_self)
+                        
+                        # Use Helper to Render
+                        display_results(container_oa, "OpenAlex", oa_target, df_oa, len(oa_works_analyzed), exclude_self)
+                        
                     except Exception as e: st.error(str(e))
 
-            with c_s2:
+            # Semantic Scholar
+            with container_s2:
                 with st.status("Querying Semantic Scholar...", expanded=True) as status:
                     status.write(f"Analyzing top {fetch_limit} papers...")
                     try:
@@ -467,7 +485,10 @@ def main():
                         
                         df_s2, num = s2_process_data(s2_papers, s2_target["id"], exclude_self)
                         status.update(label="Semantic Scholar Ready", state="complete", expanded=False)
-                        display_results("Semantic Scholar", s2_target, df_s2, len(s2_papers), exclude_self)
+                        
+                        # Use Helper to Render
+                        display_results(container_s2, "Semantic Scholar", s2_target, df_s2, len(s2_papers), exclude_self)
+                        
                     except Exception as e: st.error(str(e))
 
 if __name__ == "__main__":
